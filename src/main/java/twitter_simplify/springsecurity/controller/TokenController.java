@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import twitter_simplify.springsecurity.dto.LoginRequest;
 import twitter_simplify.springsecurity.dto.LoginResponse;
+import twitter_simplify.springsecurity.entities.Role;
 import twitter_simplify.springsecurity.repository.UserRepository;
 
 import java.time.Instant;
+import java.util.stream.Collectors;
 
 @RestController
 public class TokenController {
@@ -43,11 +45,18 @@ public class TokenController {
         var now = Instant.now();
         var expiresIn = 300L;
 
+        var scopes =  user.get().getRoles()
+                .stream()
+                .map(Role::getName)
+                .collect(Collectors.joining(" "));
+
         var claims = JwtClaimsSet.builder()
                 .issuer("mybackend")
                 .subject(user.get().getUserId().toString())
                 .issuedAt(now)
-                .expiresAt(now.plusSeconds(expiresIn)).build();
+                .expiresAt(now.plusSeconds(expiresIn))
+                .claim("scope", scopes)
+                .build();
 
         var jwtValue = jwtEncoder
                 .encode(JwtEncoderParameters.from(claims))
